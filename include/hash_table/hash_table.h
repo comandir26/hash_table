@@ -11,11 +11,24 @@ namespace hash_table {
 			Pair(K key, V value) : _key(key), _value(value) {}
 			Pair():_key(K()), _value(V()) {}
 		};
-		HashTable(size_t capacity) : _capacity(capacity), _size(0), _data(new Pair[capacity]) {
+		HashTable(size_t capacity) : _capacity(capacity), _data(new Pair[capacity]) {
 			for (size_t i = 0; i < capacity; i++)
 			{
 				_data[i] = Pair();
 			}
+		}
+		HashTable(const HashTable& rhs) {
+			_capacity = rhs.get_capacity();
+			_data = new Pair[_capacity];
+			for (size_t i = 0; i < _capacity; i++)
+			{
+				_data[i] = rhs[i];
+			}
+		}
+		HashTable& operator=(const HashTable& rhs) {
+			HashTable copy(rhs);
+			swap(copy);
+			return *this;
 		}
 		void insert(K key, V value) {
 			int index = hash(key);
@@ -23,8 +36,7 @@ namespace hash_table {
 			bool full_cycle = false;
 			while (!full_cycle) {
 				if (_data[(index + i) % _capacity]._key == K()) {
-					_data[index] = Pair(key, value);
-					++_size;
+					_data[(index + i) % _capacity] = Pair(key, value);
 					return;
 				}
 				++i;
@@ -33,7 +45,9 @@ namespace hash_table {
 		}
 		void insert_or_assign(K key, V value) {
 			int index = hash(key);
-			if (_data[index]._key == K()) _data[index] = Pair(key, value);
+			if (_data[index]._key == K()) {
+				_data[index] = Pair(key, value);
+			}
 			else _data[index]._value = value;
 		}
 		void print() const {
@@ -61,13 +75,54 @@ namespace hash_table {
 			}
 			return nullptr;
 		}
+		bool erase(K key) {
+			int index = hash(key);
+			int i = 0;
+			while (true) {
+				if (_data[(index + i) % _capacity]._key == key) break;
+				else ++i;
+				if ((index + i) % _capacity == index) return false;
+			}
+			_data[(index + i) % _capacity]._key = K();
+			_data[(index + i) % _capacity]._value = V();
+			return true;
+		}
+		int get_capacity() const {
+			return _capacity;
+		}
+		int count(K key) {
+			int counter = 0;
+			for (size_t i = 0; i < _capacity; i++)
+			{
+				if (_data[i]._key == key) ++counter;
+			}
+			return counter;
+		}
+		~HashTable(){
+			delete[] _data;
+		}
 	private:
-		int _size;
 		int _capacity;
 		Pair* _data;
 		int hash(K key) {
 			float a;
 			return (int)_capacity * modf(key * 2654435761 / pow(2, 32), &a);
+		}
+		Pair& operator[](int index){
+			return _data[index];
+		}
+		const Pair& operator[](int index) const{
+			return _data[index];
+		}
+		int& get_capacity() {
+			return _capacity;
+		}
+		Pair*& get_data() {
+			return _data;
+		}
+		void swap(HashTable& rhs){
+			std::swap(_capacity, rhs.get_capacity());
+			std::swap(_data, rhs.get_data());
 		}
 	};
 }
